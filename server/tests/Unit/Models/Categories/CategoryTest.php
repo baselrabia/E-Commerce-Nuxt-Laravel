@@ -2,46 +2,60 @@
 
 namespace Tests\Unit\Models\Categories;
 
+use App\Models\Product;
+use App\Models\Category;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\Category;
 
 class CategoryTest extends TestCase
 {
-  
+    /**
+     * A basic test example.
+     *
+     * @return void
+     */
     public function test_it_has_many_children()
     {
         $category = factory(Category::class)->create();
-
         $category->children()->save(
             factory(Category::class)->create()
         );
 
         $this->assertInstanceOf(Category::class, $category->children->first());
-
     }
 
-    public function test_it_can_fetch_only_parent()
+    public function test_it_can_fetch_only_parents()
     {
         $category = factory(Category::class)->create();
-
         $category->children()->save(
             factory(Category::class)->create()
         );
 
         $this->assertEquals(1, Category::parents()->count());
-
     }
 
-    public function test_it_ordarable_by_number_order()
+    public function test_it_is_orderable()
     {
-        $category = factory(Category::class)->create(['order' => '2']);
+        $category = factory(Category::class)->create([
+            'order' => 2
+        ]);
+        $anotherCategory = factory(Category::class)->create([
+            'order' => 1
+        ]);
+       
 
-        $categoryTwo = factory(Category::class)->create(['order' => '1']);
-
-        $this->assertEquals($categoryTwo->name , Category::ordered()->first()->name);
-        
+        $this->assertEquals($anotherCategory->name, Category::ordered()->first()->name);
     }
 
+    public function test_it_has_many_product()
+    {
+
+        $category = factory(Category::class)->create();
+        $category->products()->save(
+            factory(product::class)->create()
+        );
+
+        $this->assertInstanceOf(product::class,  $category->products->first());
+    }
 }

@@ -2,31 +2,109 @@
 
 namespace Tests\Unit\Models\Products;
 
+use App\Cart\Money;
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\ProductVariation;
+use App\Models\Stock;
+
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\Category;
-use App\Models\Product;
 
 class ProductTest extends TestCase
 {
-    /** @test */
-   function it_uses_the_slug_for_the_route_key_name()
-   {
-       $product = new Product();
+    /**
+     * A basic test example.
+     *
+     * @return void
+     */
+    public function test_it_uses_slug_for_routeKeyName()
+    {
+
+        $product = new Product();
+        $this->assertEquals($product->getRouteKeyName() , 'slug');
+    }
+
+    public function test_it_has_many_categories()
+    {
+
+        $product = factory(Product::class)->create();
+
+        $product->categories()->save(
+            factory(Category::class)->create()
+        );
+
+         $this->assertInstanceOf(Category::class ,  $product->categories->first());
+
+
+    }
+
+    public function test_it_has_many_variations()
+    {
+
+        $product = factory(Product::class)->create();
+
+        $product->variations()->save(
+            factory(ProductVariation::class)->create()
+        );
+
+        $this->assertInstanceOf(ProductVariation::class,  $product->variations->first());
+    }
+
+    public function test_it_returns_money_instance_for_price()
+    {
+
+        $product = factory(Product::class)->create();
+
+      
+        $this->assertInstanceOf(Money::class,  $product->price);
+    }
+
+    public function test_it_returns_formattted_price()
+    {
+
+        $product = factory(Product::class)->create([
+            'price' => 1000
+        ]);
+
+
+        $this->assertEquals($product->formattedprice, '$10.00');
+    }
+
+    public function test_it_can_get_stock_count()
+    {
+
        
-       $this->assertEquals($product->getRouteKeyName(), 'slug');
-   }
-   
-   /** @test */
-   function it_has_many_categories()
-   {
-       $product = factory(Product::class)->create();
-       
-       $product->categories()->save(
-           factory(Category::class)->create()
-       );
-       
-       $this->assertInstanceOf(Category::class, $product->categories->first());
-   }
+        $product = factory(Product::class)->create();
+
+        $product->variations()->save(
+             $variation = factory(ProductVariation::class)->create()
+        );
+
+        $variation->stocks()->save(
+            factory(Stock::class)->make([
+                'quantity' => $quantity = 5 
+            ])
+        );
+
+        $this->assertEquals($product->stockCount() , $quantity  );
+    }
+
+    public function test_it_can_check_if_its_in_stock()
+    {
+
+        $product = factory(Product::class)->create();
+
+        $product->variations()->save(
+           $variation = factory(ProductVariation::class)->create()
+        );
+
+        $variation->stocks()->save(
+            factory(Stock::class)->make()
+        );
+
+        $this->assertTrue($product->inStock() );
+    }
+
 }

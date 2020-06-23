@@ -3,7 +3,7 @@ module.exports = {
   ** Headers of the page
   */
   head: {
-    title: 'client',
+    title: 'cartclient',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -13,6 +13,16 @@ module.exports = {
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
     ]
   },
+  modules: [
+    '@nuxtjs/axios',
+  ],
+  axios: {
+    baseURL: 'http://localhost:8000/api'
+  },
+
+  css: [
+    '~assets/styles/app.scss'
+  ],
   /*
   ** Customize the progress bar color
   */

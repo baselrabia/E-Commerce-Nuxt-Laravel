@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Illuminate\Support\Collection;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductVariationResource extends JsonResource
@@ -14,10 +15,11 @@ class ProductVariationResource extends JsonResource
      */
     public function toArray($request)
     {
+
         if ($this->resource instanceof Collection) {
             return ProductVariationResource::collection($this->resource);
         }
-        
+
         return [
             'id'            => $this->id,
             'name'          => $this->name,
@@ -25,7 +27,8 @@ class ProductVariationResource extends JsonResource
             'price_varies'  => $this->priceVaries(),
             'order'         => $this->order,
             'stock_count'   => (int) $this->stockCount(),
-            'in_stock'      => $this->inStock()
+            'in_stock'      => $this->inStock(),
+
         ];
     }
 }
