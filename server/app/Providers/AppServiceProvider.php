@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use App\Cart\Cart;
 
 
 
@@ -26,6 +27,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+         $this->app->singleton(Cart::class, function ($app) {
+            if ($app->auth->user()) {
+                $app->auth->user()->load(['cart.stock']);
+            }
+
+            return new Cart($app->auth->user());
+        });
     }
 }
