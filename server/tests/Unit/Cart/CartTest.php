@@ -148,4 +148,120 @@ class CartTest extends TestCase
         $this->assertInstanceOf(Money::class, $cart->total());
     }
 
+    public function test_it_sync_cart_to_update_quantity()
+    {
+        $cart = new Cart(
+            $user = factory(User::class)->create()
+        );
+
+        $product = factory(ProductVariation::class)->create();
+        $anotherProduct = factory(ProductVariation::class)->create();
+
+        $user->cart()->attach([
+            $product->id => [
+                'quantity' => 2
+            ],
+            $anotherProduct->id => [
+                'quantity' => 2
+            ],
+        ]);
+
+        $cart->sync();
+
+        $this->assertEquals($user->fresh()->cart->first()->pivot->quantity, 0);
+        $this->assertEquals($user->fresh()->cart->get(1)->pivot->quantity, 0);
+    }
+
+    public function test_it_can_check_if_the_cart_has_changed_after_syncing()
+    {
+        $cart = new Cart(
+            $user = factory(User::class)->create()
+        );
+
+        $product = factory(ProductVariation::class)->create();
+        $anotherProduct = factory(ProductVariation::class)->create();
+
+        $user->cart()->attach([
+            $product->id => [
+                'quantity' => 2
+            ],
+            $anotherProduct->id => [
+                'quantity' => 0
+            ],
+        ]);
+
+        $cart->sync();
+
+        $this->assertTrue($cart->hasChanged());
+    }
+
+    public function test_it_doesnt_change_cart()
+    {
+        $cart = new Cart(
+            $user = factory(User::class)->create()
+        );
+
+        $cart->sync();
+
+        $this->assertFalse($cart->hasChanged());
+    }
+
+    public function test_it_can_return_the_correct_total_without_shipping()
+    {
+        $cart = new Cart(
+            $user = factory(User::class)->create()
+        );
+
+        $user->cart()->attach(
+            $product = factory(ProductVariation::class)->create([
+                'price' => 1000
+            ]), [
+                'quantity' => 2
+            ]
+        );
+
+        $this->assertEquals($cart->total()->amount(), 2000);
+    }
+
+    public function test_it_can_return_the_correct_total_with_shipping()
+    {
+        $cart = new Cart(
+            $user = factory(User::class)->create()
+        );
+
+        $shipping = factory(ShippingMethod::class)->create([
+            'price' => 1000
+        ]);
+
+        $user->cart()->attach(
+            $product = factory(ProductVariation::class)->create([
+                'price' => 1000
+            ]), [
+                'quantity' => 2
+            ]
+        );
+
+        $cart = $cart->withShipping($shipping->id);
+
+        $this->assertEquals($cart->total()->amount(), 3000);
+    }
+
+    public function test_it_returns_products_in_cart()
+    {
+        $cart = new Cart(
+            $user = factory(User::class)->create()
+        );
+
+        $user->cart()->attach(
+            $product = factory(ProductVariation::class)->create([
+                'price' => 1000
+            ]), [
+                'quantity' => 2
+            ]
+        );
+
+        $this->assertInstanceOf(ProductVariation::class, $cart->products()->first());
+    }
+
+
 }

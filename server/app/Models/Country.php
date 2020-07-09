@@ -7,11 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class Country extends Model
 {
     public $timestamps = false;
+
     protected $fillable = [
         'name',
-        'code',
-        
+        'code',  
     ]; 
+
+    public function shippingMethods()
+    {
+        return $this->belongsToMany(ShippingMethod::class);
+    }
 
 
 }
