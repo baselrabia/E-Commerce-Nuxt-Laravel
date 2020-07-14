@@ -55,6 +55,18 @@ class UserTest extends TestCase
         $this->assertInstanceOf(Address::class,$user->addresses->first());
     }
 
+     public function test_it_has_many_orders()
+    {
+        $user = factory(User::class)->create();
+
+        factory(Order::class)->create([
+            'user_id' => $user->id
+        ]);
+        
+
+        $this->assertInstanceOf(Order::class,$user->orders->first());
+    }
+
 
     
 }
