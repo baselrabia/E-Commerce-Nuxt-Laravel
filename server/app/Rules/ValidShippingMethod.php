@@ -3,7 +3,7 @@
 namespace App\Rules;
 
 use Illuminate\Contracts\Validation\Rule;
-
+use App\Models\Address;
 class ValidShippingMethod implements Rule
 {
     protected $addressId;

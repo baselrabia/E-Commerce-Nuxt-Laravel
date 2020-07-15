@@ -7,6 +7,7 @@ use App\Models\Address;
 use App\Models\Country;
 use App\Models\ProductVariation;
 use App\Models\ShippingMethod;
+use App\Models\PaymentMethod;
 use App\Models\Stock;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -106,6 +107,7 @@ class OrderStoreTest extends TestCase
 
         $this->jsonAs($user, 'POST', 'api/orders', [
             'shipping_method_id' => factory(ShippingMethod::class),
+            'payment_method_id' => $paymentMethod->id,
             'address_id' => $address->id
         ])
             ->assertJsonValidationErrors(['shipping_method_id']);
@@ -119,17 +121,19 @@ class OrderStoreTest extends TestCase
             $product = $this->productWithStock()
         );
 
-        [$address, $shipping] = $this->orderDependencies($user);
+        [$address, $shipping, $paymentMethod] = $this->orderDependencies($user);
 
         $this->jsonAs($user, 'POST', 'api/orders', [
             'shipping_method_id' => $shipping->id,
+            'payment_method_id' => $paymentMethod->id,
             'address_id' => $address->id,
             'subtotal' => 5000
         ]);
         $this->assertDatabaseHas('orders', [
             'user_id' => $user->id,
             'address_id' => $address->id,
-            'shipping_method_id' => $shipping->id
+            'shipping_method_id' => $shipping->id,
+            'payment_method_id' => $paymentMethod->id,
         ]);
     }
 
@@ -147,6 +151,7 @@ class OrderStoreTest extends TestCase
 //
 //        $this->jsonAs($user, 'POST', 'api/orders', [
 //            'shipping_method_id' => $shipping->id,
+//               'payment_method_id' => $paymentMethod->id,
 //            'address_id' => $address->id,
 //            'subtotal' => 5000
 //        ])->assertStatus(400);
@@ -160,10 +165,11 @@ class OrderStoreTest extends TestCase
             $product = $this->productWithStock()
         );
 
-        [$address, $shipping] = $this->orderDependencies($user);
+        [$address, $shipping, $paymentMethod] = $this->orderDependencies($user);
 
         $response = $this->jsonAs($user, 'POST', 'api/orders', [
             'shipping_method_id' => $shipping->id,
+            'payment_method_id' => $paymentMethod->id,
             'address_id' => $address->id,
             'subtotal' => 5000
         ]);
@@ -195,7 +201,11 @@ class OrderStoreTest extends TestCase
 
         $shipping->countries()->attach($address->country);
 
-        return [$address, $shipping];
+        $paymentMethod = factory(PaymentMethod::class)->create([
+              'user_id' => $user->id,
+        ]);
+
+        return [$address, $shipping ,$paymentMethod];
     }
 
     public function test_it_fires_an_order_created_event()
@@ -208,10 +218,11 @@ class OrderStoreTest extends TestCase
             $product = $this->productWithStock()
         );
 
-        [$address, $shipping] = $this->orderDependencies($user);
+        [$address, $shipping, $paymentMethod] = $this->orderDependencies($user);
 
         $response = $this->jsonAs($user, 'POST', 'api/orders', [
             'shipping_method_id' => $shipping->id,
+            'payment_method_id' => $paymentMethod->id,
             'address_id' => $address->id,
             'subtotal' => 5000
         ]);
@@ -229,14 +240,52 @@ class OrderStoreTest extends TestCase
             $product = $this->productWithStock()
         );
 
-        [$address, $shipping] = $this->orderDependencies($user);
+         [$address, $shipping, $paymentMethod] = $this->orderDependencies($user);
 
         $this->jsonAs($user, 'POST', 'api/orders', [
             'shipping_method_id' => $shipping->id,
+            'payment_method_id' => $paymentMethod->id,
             'address_id' => $address->id,
             'subtotal' => 5000
         ]);
 
         $this->assertEmpty($user->cart);
     }
+
+    public function test_it_requiers_a_payment_method()
+    {
+        $user = factory(User::class)->create();
+
+        $user->cart()->sync(
+            $product = $this->productWithStock()
+        );
+
+        
+        $this->jsonAs($user, 'POST', 'api/orders');
+
+        $this->assertJsonValidationErrors(['shipping_method_id']);
+    }
+
+    
+    public function test_it_requiers_a_payment_method_that_belongs_to_the_aunthenticated_user()
+    {
+        $user = factory(User::class)->create();
+
+        $user->cart()->sync(
+            $product = $this->productWithStock()
+        );
+
+        $paymentMethod = factory(PaymentMethod::class)->create([
+              'user_id' => factory(User::class)->create()->id,
+        ]);
+
+        $this->jsonAs($user, 'POST', 'api/orders',[
+            'payment_method_id' =>  $paymentMethod->id
+        ]);
+
+        $this->assertJsonValidationErrors(['payment_method_id']);
+    }
+
+
+
 }

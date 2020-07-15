@@ -67,6 +67,17 @@ class UserTest extends TestCase
         $this->assertInstanceOf(Order::class,$user->orders->first());
     }
 
+    public function test_it_has_many_payment_methods()
+    {
+        $user = factory(User::class)->create();
+
+        $user->paymentMethods()->save(
+            factory(PaymentMethod::class)->make()
+        );
+
+        $this->assertInstanceOf(PaymentMethod::class, $user->paymentMethods->first());
+    }
+
 
     
 }
