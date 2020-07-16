@@ -157,6 +157,33 @@ class OrderStoreTest extends TestCase
 //        ])->assertStatus(400);
 //    }
 
+
+    protected function orderDependencies(User $user)
+    {
+        $stripeCustomer = \Stripe\Customer::create([
+            'email' => $user->email
+        ]);
+        $user->update([
+            'gateway_customer_id' => $stripeCustomer->id
+        ]);
+
+        $address = factory(Address::class)->create([
+            'user_id' => $user->id,
+        ]);
+
+        $shipping = factory(ShippingMethod::class)->create();
+
+        $shipping->countries()->attach($address->country);
+
+        $paymentMethod = factory(PaymentMethod::class)->create([
+              'user_id' => $user->id,
+        ]);
+
+        return [$address, $shipping ,$paymentMethod];
+    }
+
+
+
     public function test_it_attaches_the_product_to_the_order()
     {
         $user = factory(User::class)->create();
@@ -191,22 +218,7 @@ class OrderStoreTest extends TestCase
         return $product;
     }
 
-    protected function orderDependencies(User $user)
-    {
-        $address = factory(Address::class)->create([
-            'user_id' => $user->id,
-        ]);
-
-        $shipping = factory(ShippingMethod::class)->create();
-
-        $shipping->countries()->attach($address->country);
-
-        $paymentMethod = factory(PaymentMethod::class)->create([
-              'user_id' => $user->id,
-        ]);
-
-        return [$address, $shipping ,$paymentMethod];
-    }
+  
 
     public function test_it_fires_an_order_created_event()
     {
